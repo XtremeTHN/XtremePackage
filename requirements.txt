@@ -1,0 +1,12 @@
+certifi==2024.2.2
+charset-normalizer==3.3.2
+colorama==0.4.6
+halo==0.0.31
+idna==3.7
+log-symbols==0.0.14
+requests==2.32.2
+six==1.16.0
+spinners==0.0.24
+termcolor==2.4.0
+tqdm==4.66.4
+urllib3==2.2.1
