@@ -9,3 +9,9 @@ def non_blocking(func):
     
     return wrapper
 
+def is_nuitka_installed():
+    try:
+        import nuitka
+        return True
+    except ModuleNotFoundError:
+        return False
