@@ -2,8 +2,8 @@ import argparse
 import modules.style
 
 
-from modules.style import info, warn
-from modules.utils import is_nuitka_installed
+from modules.style import info, warn, error
+from modules.utils import is_nuitka_installed, is_installed
 from modules.repository import Repository
 
 parser = argparse.ArgumentParser(prog="xpkg", description="A package manager for all my projects")
@@ -31,5 +31,7 @@ if __name__ == "__main__":
         if is_nuitka_installed() is False:
             warn("Python compiler (nuitka) not installed. If a python package doesn't have a build script, the install will fail")
         
-        github_pkg = repo.get_package(pkg)
+        if is_installed("git") is False:
+            error("Git not installed")
         
+        github_pkg = repo.install(pkg)
