@@ -5,6 +5,7 @@ import os
 from shutil import which
 from pathlib import Path
 from subprocess import Popen
+from modules.style import error
 
 def non_blocking(func):
     def wrapper(*args, **kwargs):
@@ -35,13 +36,13 @@ def get_main_file_python(path: Path) -> str:
     
     return files[0]
 
-def check_exit_successfully(args: list, wd=None) -> bool:
+def check_exit_successfully(args: list, executable=None, wd=None) -> bool:
     # args = [which(args[0]) or args[0], *args]
     with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr) as proc:
         proc.communicate()
         return proc.poll() == 0
     
-def exec_on_venv(args: list, venv_path: str, wd: str):
+def exec_on_venv(args: list, venv_path: str, wd: str, executable=None):
     _env = {
         "VIRTUAL_ENV": venv_path,
         "PATH": f"{venv_path}/bin:{os.environ['PATH']}"
@@ -49,5 +50,5 @@ def exec_on_venv(args: list, venv_path: str, wd: str):
     
     with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr, env=_env) as proc:
         proc.communicate()
-        return proc.poll() == 0
-    
+        if (exit_code:=proc.poll()) > 0:
+            error(executable or " ".join(args),  "returned", exit_code == 0)

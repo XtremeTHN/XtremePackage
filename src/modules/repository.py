@@ -3,15 +3,11 @@ import json
 import pathlib
 import shutil
 
-import venv
-
 from modules.style import info, warn, error
 from modules.spinner import Spinner
 from modules.utils import get_main_file_python, check_exit_successfully, exec_on_venv
 
 from typing import TypedDict
-
-from subprocess import Popen
 
 CONFIG_DIR = pathlib.Path.home() / ".local" / "share" / "xtremepkg"
 CONFIG_DIR.mkdir(exist_ok=True)
@@ -66,12 +62,15 @@ class Repository:
             
         info("Done")
         
-    def install(self, pkg: str):
+    def install(self, pkg: str, pkg_name=None):
+        package_name = pkg_name or pkg.lower()
+        
         github_pkg = self.get_package(pkg)
         if github_pkg is None:
             error(f'No package named "{pkg}"')
             
-        package_name = pkg.lower()
+        if shutil.which(package_name) is not None:
+            error("There's a executable in PATH with the same name of the package. Uninstall it, or specify the package name in the arguments")
             
         dest = CACHE_DIR / package_name
         if dest.exists() is False:
@@ -86,20 +85,25 @@ class Repository:
         match github_pkg["language"].lower():
             case "python":
                 venv_dir = dest / ".venv"
+                requirements_path = dest / "requirements.txt"
                 
                 if venv_dir.exists() is False:
                     info("Making virtual environment...")
-                    venv.create(str(venv_dir), symlinks=True, with_pip=True)
+                    check_exit_successfully(["python3", "-m", "venv", venv_dir], dest)
+                    
+                info("Installing nuitka to the venv...")
+                exec_on_venv(["python3", "-m", "pip", "install", "nuitka"], venv_dir, dest)
                 
-                info("Installing dependencies...")
-                if exec_on_venv(["python3", "-m", "pip", "install", "nuitka", "-r", f'{dest}/requirements.txt'], venv_dir, dest) is False:
-                    error("pip returned non-zero exit code")
+                if requirements_path.exists():
+                    info("Installing dependencies...")
+                    exec_on_venv(["python3", "-m", "pip", "install", "-r", f'{dest}/requirements.txt'], venv_dir, dest)
+                else:
+                    warn("No requirements file found. Maybe the compilation will fail")
                 
                 info("Detecting entry file...")
                 entry_file = get_main_file_python(dest)
                 info("Compiling python project with nuitka...")
-                if exec_on_venv(["python3", "-m", "nuitka", "--follow-imports", entry_file, '--output-dir=build', f'--output-file={package_name}'], venv_dir, dest) is False:
-                    error("nuitka returned non-zero exit code")
+                exec_on_venv(["python3", "-m", "nuitka", "--follow-imports", entry_file, '--output-dir=build', f'--output-file={package_name}'], venv_dir, dest)
                 
                 info("Successfully compiled")
                 info('Moving to ~/.local/bin ...')

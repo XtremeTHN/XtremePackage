@@ -1,8 +1,7 @@
 import argparse
 import modules.style
 
-
-from modules.style import info, warn, error
+from modules.style import warn, error
 from modules.utils import is_nuitka_installed, is_installed
 from modules.repository import Repository
 
@@ -16,6 +15,7 @@ subparser = parser.add_subparsers(help="The operation you wanna perform")
 install = subparser.add_parser("install", help="Installs a package")
 
 install.add_argument("PACKAGE", help="The package name you wanna install")
+install.add_argument("-a", "--alias", help="The package alias")
 
 args = parser.parse_args()
 
@@ -28,10 +28,7 @@ if __name__ == "__main__":
         repo.refresh_repo()
 
     if (pkg:=getattr(args, "PACKAGE", "")) != "":
-        if is_nuitka_installed() is False:
-            warn("Python compiler (nuitka) not installed. If a python package doesn't have a build script, the install will fail")
-        
         if is_installed("git") is False:
             error("Git not installed")
         
-        github_pkg = repo.install(pkg)
+        github_pkg = repo.install(pkg, args.alias)

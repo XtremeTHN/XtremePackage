@@ -1,12 +1,13 @@
 from threading import Thread, Event
 from modules.style import info
 
-from colorama import Fore, Style
+from colorama import Fore
 
 import time
 
 CURSOR_HIDE = "\033[?25l"
 CURSOR_SHOW = "\033[?25h"
+
 SPINNER_FRAMES = [
     "⠁",
     "⠁",
