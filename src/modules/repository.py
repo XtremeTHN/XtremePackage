@@ -6,6 +6,7 @@ import shutil
 from modules.style import info, warn, error
 from modules.spinner import Spinner
 from modules.utils import get_main_file_python, check_exit_successfully, exec_on_venv
+from modules.config import XConfig
 
 from typing import TypedDict
 
@@ -61,15 +62,21 @@ class Repository:
             self.repo = repo_content
             
         info("Done")
+    
+    def clear_cache(self):
+        with Spinner(f"Removing {str(CACHE_DIR)}..."):
+            shutil.rmtree(CACHE_DIR)
+            CACHE_DIR.mkdir(exist_ok=True)
+        info("Removed", str(CACHE_DIR))
         
-    def install(self, pkg: str, pkg_name=None):
+    def install(self, pkg: str, pkg_name=None, clone=None):
         package_name = pkg_name or pkg.lower()
         
         github_pkg = self.get_package(pkg)
         if github_pkg is None:
             error(f'No package named "{pkg}"')
             
-        if shutil.which(package_name) is not None:
+        if shutil.which(package_name) is not None and clone is None:
             error("There's a executable in PATH with the same name of the package. Uninstall it, or specify the package name in the arguments")
             
         dest = CACHE_DIR / package_name
@@ -77,6 +84,9 @@ class Repository:
             info("Cloning repository...")
             if check_exit_successfully(["git", "clone", github_pkg["url"], dest]) is False:
                 error("Git returned non-zero exit code")
+            
+            if clone is not None:
+                return
                 
         else:
             if (dest / ".git").exists() is False:
