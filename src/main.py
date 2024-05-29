@@ -27,7 +27,7 @@ if __name__ == "__main__":
         modules.style.DEBUG = True
         
     if args.refresh:
-        repo.refresh_repo()
+        repo.refresh()
     
     if args.clean:
         repo.clear_cache()

@@ -31,17 +31,18 @@ class Repository:
         
         self.repo = None
         if not self.file.exists():
-            self.refresh_repo()
+            self.refresh()
         
         self.repo: list[Package] = self.repo or json.loads(self.file.read_text())
     
-    def refresh_repo(self):
+    def refresh(self):
         info("Refreshing repo...")
 
         with Spinner("Waiting github response...") as spin:
             try:
                 res = requests.get(API_URL).json()
             except:
+                error("Exception ocurred when trying to connect to github. Maybe you don't have internet?")
                 return
             
             spin.text = "Filtering data..."
@@ -69,14 +70,14 @@ class Repository:
             CACHE_DIR.mkdir(exist_ok=True)
         info("Removed", str(CACHE_DIR))
         
-    def install(self, pkg: str, pkg_name=None, clone=None):
+    def install(self, pkg: str, pkg_name=None, clone=False):
         package_name = pkg_name or pkg.lower()
         
         github_pkg = self.get_package(pkg)
         if github_pkg is None:
             error(f'No package named "{pkg}"')
             
-        if shutil.which(package_name) is not None and clone is None:
+        if shutil.which(package_name) is not None and clone is False:
             error("There's a executable in PATH with the same name of the package. Uninstall it, or specify the package name in the arguments")
             
         dest = CACHE_DIR / package_name
@@ -85,9 +86,8 @@ class Repository:
             if check_exit_successfully(["git", "clone", github_pkg["url"], dest]) is False:
                 error("Git returned non-zero exit code")
             
-            if clone is not None:
-                return
-                
+        if clone is True:
+            return
         else:
             if (dest / ".git").exists() is False:
                 error(f"The repository exists, but it's not a git repo\nRemove this folder and execute the xpkg command again:\nRepo path: {dest}")
