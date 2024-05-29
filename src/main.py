@@ -1,9 +1,14 @@
+
+
 import argparse
 import modules.style
 
-from modules.style import warn, error
-from modules.utils import is_nuitka_installed, is_installed
+from modules.style import error
+
+from modules.utils import check_pyversion, is_installed
 from modules.repository import Repository
+
+check_pyversion()
 
 parser = argparse.ArgumentParser(prog="xpkg", description="A package manager for all my projects")
 

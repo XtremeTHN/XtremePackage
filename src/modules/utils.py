@@ -5,7 +5,7 @@ import os
 from shutil import which
 from pathlib import Path
 from subprocess import Popen
-from modules.style import error
+from modules.style import error, warn
 
 def non_blocking(func):
     def wrapper(*args, **kwargs):
@@ -25,6 +25,12 @@ def is_nuitka_installed():
 
 def is_installed(cmd):
     return True if which(cmd) is not None else False
+
+def check_pyversion():
+    vi = sys.version_info
+    version = int(f"{vi[0]}{vi[1]}")
+    if version > 311:
+        warn("Nuitka may compile incorrectly when python version is upper than 3.11. Downgrade python or use pyenv")
 
 def get_main_file_python(path: Path) -> str:
     # files = list(filter(lambda x: x.split("/")[-1] == "main.py", glob.glob(str(path / "**" / "*.py"), recursive=True)))
