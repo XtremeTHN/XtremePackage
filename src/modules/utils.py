@@ -33,11 +33,12 @@ def check_pyversion():
         warn("Nuitka may compile incorrectly when python version is upper than 3.11. Downgrade python or use pyenv")
 
 def get_main_file_python(path: Path) -> str:
-    # files = list(filter(lambda x: x.split("/")[-1] == "main.py", glob.glob(str(path / "**" / "*.py"), recursive=True)))
     files = [str(p) for p in path.glob("**/*.py") if p.name == "main.py"]
     if len(files) > 1:
-        # k = list(map(lambda x: len(x.split("/")), files))
+        # Gets the size of all file paths on project root
         k = [len(x.split("/")) for x in files]
+
+        # Return the root main file
         return files[k.index(min(k))]
     
     return files[0]
