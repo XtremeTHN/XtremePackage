@@ -42,11 +42,11 @@ def get_main_file_python(path: Path) -> str:
     
     return files[0]
 
-def check_exit_successfully(args: list, executable=None, wd=None) -> bool:
-    # args = [which(args[0]) or args[0], *args]
-    with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr) as proc:
+def exec_cmd(args: list, wd=None, env=None) -> bool:
+    with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr, env=env) as proc:
         proc.communicate()
-        return proc.poll() == 0
+        if (exit_code:=proc.poll()) > 0:
+            error(args[0],  "returned", exit_code == 0)
     
 def exec_on_venv(args: list, venv_path: str, wd: str, executable=None):
     _env = {
@@ -54,7 +54,4 @@ def exec_on_venv(args: list, venv_path: str, wd: str, executable=None):
         "PATH": f"{venv_path}/bin:{os.environ['PATH']}"
     }
     
-    with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr, env=_env) as proc:
-        proc.communicate()
-        if (exit_code:=proc.poll()) > 0:
-            error(executable or " ".join(args),  "returned", exit_code == 0)
+    exec_cmd(_env)

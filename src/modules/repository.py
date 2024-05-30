@@ -5,7 +5,7 @@ import shutil
 
 from modules.style import info, warn, error
 from modules.spinner import Spinner
-from modules.utils import get_main_file_python, check_exit_successfully, exec_on_venv
+from modules.utils import get_main_file_python, exec_cmd, exec_on_venv
 from modules.config import XConfig
 
 from typing import TypedDict
@@ -83,8 +83,7 @@ class Repository:
         dest = CACHE_DIR / package_name
         if dest.exists() is False:
             info("Cloning repository...")
-            if check_exit_successfully(["git", "clone", github_pkg["url"], dest]) is False:
-                error("Git returned non-zero exit code")
+            exec_cmd(["git", "clone", github_pkg["url"], dest])
             
         if clone is True:
             return
@@ -99,7 +98,7 @@ class Repository:
                 
                 if venv_dir.exists() is False:
                     info("Making virtual environment...")
-                    check_exit_successfully(["python3", "-m", "venv", venv_dir], dest)
+                    exec_cmd(["python3", "-m", "venv", venv_dir], dest)
                     
                 info("Installing nuitka to the venv...")
                 exec_on_venv(["python3", "-m", "pip", "install", "nuitka"], venv_dir, dest)
