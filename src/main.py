@@ -7,41 +7,27 @@ from modules.style import error
 
 from modules.utils import check_pyversion, is_installed
 from modules.repository import Repository
+from modules.arguments import ParseArgs
 
 check_pyversion()
 
-parser = argparse.ArgumentParser(prog="xpkg", description="A package manager for all my projects")
-
-parser.add_argument("-r", "--refresh", action="store_true", help="Refresh the database")
-parser.add_argument("-c", "--clean", action="store_true", help="Cleans the cache")
-parser.add_argument("-d", "--debug", action="store_true", help="Shows where info messages where called, also show debug messages")
-
-subparser = parser.add_subparsers(help="The operation you wanna perform")
-
-install = subparser.add_parser("install", help="Installs a package")
-
-install.add_argument("PACKAGE", help="The package name you wanna install")
-install.add_argument("-c", "--clone", action="store_true", help="Clone the package repository, but not installing it")
-install.add_argument("-a", "--alias", help="The package alias")
-
-repo_parser = subparser.add_parser("repo", help="Repository related utilities")
-# repo_parser.add_argument("")
-
-args = parser.parse_args()
 
 if __name__ == "__main__":
     repo = Repository()
-    if args.debug:
+
+    args = ParseArgs()
+    if args.debug_flag:
         modules.style.DEBUG = True
         
-    if args.refresh:
+    if args.refresh_flag:
         repo.refresh()
     
-    if args.clean:
+    if args.clean_flag:
         repo.clear_cache()
 
-    if (pkg:=getattr(args, "PACKAGE", "")) != "":
+    if args.install is not None:
         if is_installed("git") is False:
             error("Git not installed")
         
-        github_pkg = repo.install(pkg, args.alias, args.clone)
+        for pkg in args.install.packages:
+            repo.install(pkg, args.install.alias_option, args.install.clone_flag)

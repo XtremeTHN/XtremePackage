@@ -54,4 +54,4 @@ def exec_on_venv(args: list, venv_path: str, wd: str, executable=None):
         "PATH": f"{venv_path}/bin:{os.environ['PATH']}"
     }
     
-    exec_cmd(_env)
+    exec_cmd(args, wd, env=_env)

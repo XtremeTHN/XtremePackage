@@ -1,26 +1,29 @@
 import sys
 from modules.style import underlined, bold, info, error
-
-class Debug:
-    ...
     
-class InstallArguments(Debug):
+class InstallArguments:
     clone_flag: bool
     alias_option: str | None
-    help_flag: bool
     
     packages: list[str]
+
+    def __init__(self) -> None:
+        self.clone_flag = False
+        self.alias_option = None
+        self.packages = []
 
 class Arguments:
     refresh_flag: bool
     clean_flag: bool
-    clone_flag: bool
     debug_flag: bool
     
     install: InstallArguments | None
     
     def __init__(self) -> None:
-        pass
+        self.install = None
+        self.refresh_flag = False
+        self.clean_flag = False
+        self.debug_flag = False
     
 def print_usage():
     print(f"{underlined(bold('Usage:'))} [-h] [-r] [-c] [-d] OPERATION")
@@ -64,10 +67,9 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                 
             case "install":
                 install_args = InstallArguments()
-                install_args.packages = []
                 
                 double_continue = False
-                iargs = args[index + 1:]
+                iargs: list[str] = args[index + 1:]
                 for _index, arg in enumerate(iargs):
                     if double_continue is True:
                         double_continue = False
@@ -76,9 +78,14 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                     match arg:
                         case "-a" | "--alias":
                             value_index = _index + 1
+
+                            # value checking
                             if len(iargs) - 1 < value_index:
                                 error("Expected alias")
-                                
+                            
+                            if iargs[value_index].startswith("-"):
+                                error("Expected alias, not a flag")
+
                             install_args.alias_option = iargs[value_index]
                             double_continue = True
                             continue
@@ -88,11 +95,10 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                             
                         case _:
                             install_args.packages.append(arg)
+                if len(install_args.packages) == 0:
+                    error("Expected at least one package")
                 res.install = install_args
                 break
-            
-            case "repository":
-                for arg in args[index + 1:]:
-                    print(arg)
-                break
+            case _:
+                error("Unknown command/option")     
     return res
