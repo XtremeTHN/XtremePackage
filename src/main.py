@@ -24,6 +24,9 @@ install.add_argument("PACKAGE", help="The package name you wanna install")
 install.add_argument("-c", "--clone", action="store_true", help="Clone the package repository, but not installing it")
 install.add_argument("-a", "--alias", help="The package alias")
 
+repo_parser = subparser.add_parser("repo", help="Repository related utilities")
+# repo_parser.add_argument("")
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
