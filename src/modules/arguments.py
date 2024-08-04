@@ -1,6 +1,6 @@
 import sys
 from modules.style import underlined, bold, info, error
-    
+
 class InstallArguments:
     clone_flag: bool
     alias_option: str | None
@@ -26,21 +26,23 @@ class Arguments:
         self.debug_flag = False
     
 def print_usage():
-    print(f"{underlined(bold('Usage:'))} [-h] [-r] [-c] [-d] OPERATION")
+    print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [-h] [-r] [-c] [-d] OPERATION")
 
 def print_help():
     print_usage()
     print("\nA package manager for all my projects\n")
     
     print(bold(underlined("Commands:")))
-    print("\tinstall: Installs a package")
-    print("\trepository: Repository related utilities\n")
+    print("\tinstall:           Installs a package\n")
     
     print(bold(underlined("Flags:")))
     print("\t-h, --help         Prints this help message.")
     print("\t-r, --refresh      Refresh the repository.")
     print("\t-c, --clean        Cleans the cache (Removes ~/.cache/xtremepkg).")
     print("\t-d, --debug        Shows where info messages were called, also show debug messages.")
+    
+    print("\nThe repository resides in ~/.local/share/xtremepkg")
+    
     sys.exit(0)
 
 
@@ -92,6 +94,12 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                         
                         case "-c" | "--clone":
                             install_args.clone_flag = True
+                        
+                        case "-r" | "--refresh":
+                            res.refresh_flag = True
+                            
+                        case "-d" | "--debug":
+                            res.debug_flag = True
                             
                         case _:
                             install_args.packages.append(arg)
