@@ -5,7 +5,7 @@ import os
 from shutil import which
 from pathlib import Path
 from subprocess import Popen
-from modules.style import error, warn
+from modules.style import error, warn, pretty_string
 
 def non_blocking(func):
     def wrapper(*args, **kwargs):
@@ -45,6 +45,7 @@ def get_main_file_python(path: Path) -> str:
 
 def exec_cmd(args: list, wd=None, env=None) -> bool:
     with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr, env=env) as proc:
+        print(pretty_string("+", "green"), " ".join(args))
         proc.communicate()
         if (exit_code:=proc.poll()) > 0:
             error(args[0],  "returned", exit_code == 0)

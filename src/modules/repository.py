@@ -3,9 +3,9 @@ import json
 import pathlib
 import shutil
 
-from modules.style import info, warn, error
+from modules.style import info, warn, error, debug
 from modules.spinner import Spinner
-from modules.utils import get_main_file_python, exec_cmd, exec_on_venv
+from modules.utils import get_main_file_python, exec_cmd, exec_on_venv, is_installed
 from modules.config import XConfig
 
 from typing import TypedDict
@@ -70,10 +70,14 @@ class Repository:
             CACHE_DIR.mkdir(exist_ok=True)
         info("Removed", str(CACHE_DIR))
         
-    def install(self, pkg: str, pkg_name=None, clone=False):
-        package_name = pkg_name or pkg.lower()
-        
+    def install(self, pkg: Package | str, pkg_name=None, clone=False):        
         github_pkg = self.get_package(pkg)
+        if pkg_name is not None:
+            if github_pkg["language"] != "python":
+                error("Alias option is only available when installing python packages")
+        
+        package_name = pkg_name or pkg.lower()
+            
         if github_pkg is None:
             error(f'No package named "{pkg}"')
             
@@ -116,10 +120,23 @@ class Repository:
                 
                 info("Successfully compiled")
                 info('Moving to ~/.local/bin ...')
-                shutil.move(dest / package_name, LOCAL_BIN_DIR / package_name)
+                shutil.move(dest / package_name, LOCAL_BIN_DIR / package_name)                
+            case 'vala':
+                build_dir = dest / "build"
                 
-                info(f'Installed package "{pkg}" with name "{package_name}"')
-                return
+                if is_installed('meson') is False:
+                    error("Meson needs to be installed to compile vala projects", exit_code=127)
+                
+                info("Configuring project....")
+                if is_installed('arch-meson') is True:
+                    info("Using arch-meson...")
+                    exec_cmd(['arch-meson', 'build'], wd=dest)
+                
+                info('Compiling & installing...')
+                exec_cmd(["meson", "install"], wd=build_dir)
+                
+        info(f'Installed package "{pkg}" with name "{package_name}"')
+        
     
     def get_package(self, name) -> Package | None:
         pkg = list(filter(lambda pkg: name == pkg["name"], self.repo))
