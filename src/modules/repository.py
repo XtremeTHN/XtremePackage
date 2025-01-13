@@ -4,10 +4,10 @@ import shutil
 
 from modules.style import info, warn, error, debug
 from modules.spinner import Spinner
-from modules.utils import exec_cmd, is_installed
+from modules.utils import exec_cmd
 from modules.constants import CACHE_DIR, CONFIG_DIR, API_URL
 
-from modules.projects import PythonProject
+from modules.projects import PythonProject, ValaProject
 
 from typing import TypedDict
 
@@ -96,18 +96,11 @@ class Repository:
                 python.install()
     
             case 'vala':
+                vala = ValaProject(dest, package_name)
+                vala.setup()
+                vala.install()
                 build_dir = dest / "build"
-                
-                if is_installed('meson') is False:
-                    error("Meson needs to be installed to compile vala projects", exit_code=127)
-                
-                info("Configuring project....")
-                if is_installed('arch-meson') is True:
-                    info("Using arch-meson...")
-                    exec_cmd(['arch-meson', 'build'], wd=dest)
-                
-                info('Compiling & installing...')
-                exec_cmd(["meson", "install"], wd=build_dir)
+
                 
         info(f'Installed package "{pkg}" with name "{package_name}"')
         
