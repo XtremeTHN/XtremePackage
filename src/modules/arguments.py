@@ -1,9 +1,14 @@
 import sys
+from pathlib import Path
+from modules.constants import LOCAL_BIN_DIR, SHARE_DIR
 from modules.style import underlined, bold, info, error
 
 class InstallArguments:
     clone_flag: bool
     alias_option: str | None
+
+    bin_dir: str
+    share_dir: str
     
     packages: list[str]
 
@@ -11,6 +16,9 @@ class InstallArguments:
         self.clone_flag = False
         self.alias_option = None
         self.packages = []
+
+        self.bin_dir = str(LOCAL_BIN_DIR)
+        self.share_dir = str(SHARE_DIR)
 
 class Arguments:
     refresh_flag: bool
@@ -27,6 +35,19 @@ class Arguments:
     
 def print_usage():
     print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [-h] [-r] [-c] [-d] OPERATION")
+
+def print_install_help():
+    print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [FLAGS] install [-a ALIAS] [--bin-directory PATH] [--share-directory PATH] [-c] PACKAGES")
+    
+    print(bold(underlined("Flags:")))
+    print("\t-h, --help         Prints this help message.")
+    print("\t-r, --refresh      Refresh the repository.")
+    print("\t-c, --clone        Only clone the repository.")
+    print("\t--bin-directory    Sets the bin directory. Default: ~/.local/bin")
+    print("\t--share-directory  Sets the share directory. Default: ~/.local/share")
+
+    print("Positional arguments:")
+    print("\tPACKAGES          The packages to install.")
 
 def print_help():
     print_usage()
@@ -45,6 +66,11 @@ def print_help():
     
     sys.exit(0)
 
+def get_value(index: int, args: list[str], err_msg="Expected value") -> str:
+    if len(args) - 1 < index:
+        error(err_msg)
+    
+    return args[index + 1]
 
 # I know im reinventing the wheel, but i just wanted to create a customized argparser
 def ParseArgs(args=sys.argv[1:]) -> Arguments:
@@ -79,18 +105,17 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                     
                     match arg:
                         case "-a" | "--alias":
-                            value_index = _index + 1
+                            value = get_value(_index, iargs, err_msg="Expected alias")
 
-                            # value checking
-                            if len(iargs) - 1 < value_index:
-                                error("Expected alias")
-                            
-                            if iargs[value_index].startswith("-"):
+                            if value.startswith("-"):
                                 error("Expected alias, not a flag")
 
-                            install_args.alias_option = iargs[value_index]
+                            install_args.alias_option = value
                             double_continue = True
                             continue
+                            
+                        case "-h" | "--help":
+                            print_install_help()
                         
                         case "-c" | "--clone":
                             install_args.clone_flag = True
@@ -100,13 +125,20 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                             
                         case "-d" | "--debug":
                             res.debug_flag = True
-                            
+                        
+                        case "--bin-directory":
+                            install_args.bin_dir = get_value(_index, iargs, err_msg="Expected bin directory")
+                        
+                        case "--share-directory":
+                            install_args.share_dir = get_value(_index, iargs, err_msg="Expected share directory")
+                        
                         case _:
                             install_args.packages.append(arg)
                 if len(install_args.packages) == 0:
                     error("Expected at least one package")
                 res.install = install_args
                 break
+
             case _:
                 error("Unknown command/option")     
     return res

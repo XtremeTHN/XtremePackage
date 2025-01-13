@@ -1,6 +1,3 @@
-
-
-import argparse
 import modules.style
 
 from modules.style import error
@@ -8,6 +5,8 @@ from modules.style import error
 from modules.utils import is_installed
 from modules.repository import Repository
 from modules.arguments import ParseArgs
+
+from pathlib import Path
 
 if __name__ == "__main__":
     repo = Repository()
@@ -23,6 +22,24 @@ if __name__ == "__main__":
         repo.clear_cache()
 
     if args.install is not None:
+        if (n := args.install.bin_dir) is not None:
+            bin_dir = Path(n)
+            if bin_dir.exists() is False:
+                error(f"Bin directory '{bin_dir}' doesn't exist")
+            if bin_dir.is_dir() is False:
+                error(f"Bin directory '{bin_dir}' is not a directory")
+
+            LOCAL_BIN_DIR = bin_dir
+
+        if (n := args.install.share_dir) is not None:
+            share_dir = Path(n)
+            if share_dir.exists() is False:
+                error(f"Share directory '{share_dir}' doesn't exist")
+            if share_dir.is_dir() is False:
+                error(f"Share directory '{share_dir}' is not a directory")
+
+            SHARE_DIR = share_dir
+
         if is_installed("git") is False:
             error("Git not installed")
         
