@@ -1,21 +1,15 @@
 import requests
 import json
-import pathlib
 import shutil
 
 from modules.style import info, warn, error, debug
 from modules.spinner import Spinner
-from modules.utils import get_main_file_python, exec_cmd, exec_on_venv, is_installed
+from modules.utils import exec_cmd, is_installed
+from modules.constants import CACHE_DIR, CONFIG_DIR, API_URL
+
+from modules.projects import PythonProject
 
 from typing import TypedDict
-
-CONFIG_DIR = pathlib.Path.home() / ".local" / "share" / "xtremepkg"
-CONFIG_DIR.mkdir(exist_ok=True)
-
-CACHE_DIR = pathlib.Path.home() / ".cache" / "xtremepkg"
-LOCAL_BIN_DIR = pathlib.Path.home() / ".local" / "bin"
-
-API_URL="https://api.github.com/users/XtremeTHN/repos"
 
 class Package(TypedDict):
     name: str
@@ -76,6 +70,7 @@ class Repository:
                 error("Alias option is only available when installing python packages")
         
         package_name = pkg_name or pkg.lower()
+        print(package_name)
             
         if github_pkg is None:
             error(f'No package named "{pkg}"')
@@ -86,7 +81,7 @@ class Repository:
         dest = CACHE_DIR / package_name
         if dest.exists() is False:
             info("Cloning repository...")
-            exec_cmd(["git", "clone", github_pkg["url"], dest])
+            exec_cmd(["git", "clone", github_pkg["url"], str(dest)])
             
         if clone is True:
             return
@@ -96,30 +91,10 @@ class Repository:
         
         match github_pkg["language"].lower():
             case "python":
-                venv_dir = dest / ".venv"
-                requirements_path = dest / "requirements.txt"
-                
-                if venv_dir.exists() is False:
-                    info("Making virtual environment...")
-                    exec_cmd(["python3", "-m", "venv", venv_dir], dest)
-                    
-                info("Installing nuitka to the venv...")
-                exec_on_venv(["python3", "-m", "pip", "install", "nuitka"], venv_dir, dest)
-                
-                if requirements_path.exists():
-                    info("Installing dependencies...")
-                    exec_on_venv(["python3", "-m", "pip", "install", "-r", f'{dest}/requirements.txt'], venv_dir, dest)
-                else:
-                    warn("No requirements file found. Maybe the compilation will fail")
-                
-                info("Detecting entry file...")
-                entry_file = get_main_file_python(dest)
-                info("Compiling python project with nuitka...")
-                exec_on_venv(["python3", "-m", "nuitka", "--follow-imports", entry_file, '--output-dir=build', f'--output-file={package_name}'], venv_dir, dest)
-                
-                info("Successfully compiled")
-                info('Moving to ~/.local/bin ...')
-                shutil.move(dest / package_name, LOCAL_BIN_DIR / package_name)                
+                python = PythonProject(dest, package_name)
+                python.compile()
+                python.install()
+    
             case 'vala':
                 build_dir = dest / "build"
                 
@@ -136,7 +111,6 @@ class Repository:
                 
         info(f'Installed package "{pkg}" with name "{package_name}"')
         
-    
     def get_package(self, name) -> Package | None:
         pkg = list(filter(lambda pkg: name == pkg["name"], self.repo))
         if len(pkg) == 0:

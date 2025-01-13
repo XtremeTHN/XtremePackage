@@ -26,34 +26,16 @@ def is_nuitka_installed():
 def is_installed(cmd):
     return True if which(cmd) is not None else False
 
-# def check_pyversion():
-#     vi = sys.version_info
-#     version = int(f"{vi[0]}{vi[1]}")
-#     if version > 311:
-#         warn("Nuitka may compile incorrectly when python version is upper than 3.11. Downgrade python or use pyenv")
-
-def get_main_file_python(path: Path) -> str:
-    files = [str(p) for p in path.glob("**/*.py") if p.name == "main.py"]
-    if len(files) > 1:
-        # Gets the size of all file paths on project root
-        k = [len(x.split("/")) for x in files]
-
-        # Return the root main file
-        return files[k.index(min(k))]
-    
-    return files[0]
-
-def exec_cmd(args: list, wd=None, env=None) -> bool:
+def exec_cmd(args: list, wd=None, env=None, exit_on_error=True):
+    if isinstance(wd, Path):
+        wd = str(wd)
+        
     with Popen(args=args, cwd=wd, stdout=sys.stdout, stderr=sys.stderr, env=env) as proc:
         print(pretty_string("+", "green"), " ".join(args))
         proc.communicate()
         if (exit_code:=proc.poll()) > 0:
-            error(args[0],  "returned", exit_code == 0)
+            if exit_on_error is True:
+                error(args[0],  "returned", exit_code)
+            else:
+                return exit_code
     
-def exec_on_venv(args: list, venv_path: str, wd: str, executable=None):
-    _env = {
-        "VIRTUAL_ENV": venv_path,
-        "PATH": f"{venv_path}/bin:{os.environ['PATH']}"
-    }
-    
-    exec_cmd(args, wd, env=_env)
