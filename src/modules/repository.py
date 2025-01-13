@@ -6,7 +6,6 @@ import shutil
 from modules.style import info, warn, error, debug
 from modules.spinner import Spinner
 from modules.utils import get_main_file_python, exec_cmd, exec_on_venv, is_installed
-from modules.config import XConfig
 
 from typing import TypedDict
 
