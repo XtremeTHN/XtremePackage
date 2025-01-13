@@ -26,11 +26,11 @@ def is_nuitka_installed():
 def is_installed(cmd):
     return True if which(cmd) is not None else False
 
-def check_pyversion():
-    vi = sys.version_info
-    version = int(f"{vi[0]}{vi[1]}")
-    if version > 311:
-        warn("Nuitka may compile incorrectly when python version is upper than 3.11. Downgrade python or use pyenv")
+# def check_pyversion():
+#     vi = sys.version_info
+#     version = int(f"{vi[0]}{vi[1]}")
+#     if version > 311:
+#         warn("Nuitka may compile incorrectly when python version is upper than 3.11. Downgrade python or use pyenv")
 
 def get_main_file_python(path: Path) -> str:
     files = [str(p) for p in path.glob("**/*.py") if p.name == "main.py"]

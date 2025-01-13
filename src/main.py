@@ -5,12 +5,9 @@ import modules.style
 
 from modules.style import error
 
-from modules.utils import check_pyversion, is_installed
+from modules.utils import is_installed
 from modules.repository import Repository
 from modules.arguments import ParseArgs
-
-check_pyversion()
-
 
 if __name__ == "__main__":
     repo = Repository()
