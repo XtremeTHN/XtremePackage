@@ -46,33 +46,67 @@ class Repository:
     
     def refresh(self):
         info("Refreshing repo...")
-
+        repos = []
+        page = 1
         with Spinner("Waiting github response...") as spin:
-            try:
-                res = requests.get(API_URL).json()
-            except:
-                error("Exception ocurred when trying to connect to github. Maybe you don't have internet?")
-                return
+            while True:
+                spin.text = f"Getting page {page}..."
+                res = requests.get(API_URL, params={"per_page": 30, "page": page})
+                if res.status_code != 200:
+                    error("Error when trying to get repo list. Recieved status code: " + str(res.status_code))
+                
+                data = res.json()
+                if not data:
+                    break
+
+                for repo in data:
+                    repos.append({
+                        "name": repo["name"],
+                        "alias": None,
+                        "path": None,
+                        "url": repo["html_url"],
+                        "description": repo["description"],
+                        "language": repo["language"],
+                        "last_update_date": repo["updated_at"]
+                    })
+                page += 1
             
-            spin.text = "Filtering data..."
-            
-            repo_content = []
-            for repo in res:
-                repo_content.append({
-                    "name": repo["name"],
-                    "alias": None,
-                    "path": None,
-                    "url": repo["html_url"],
-                    "description": repo["description"],
-                    "language": repo["language"],
-                    "last_update_date": repo["updated_at"]
-                })
-            
+            spin.text = "Saving data..."
             with self.repo_file.open("w") as f:
-                json.dump(repo_content, f)
+                json.dump(repos, f)
+
+        info("Done")
+        return repos
+    
+    # def refresh(self):
+    #     info("Refreshing repo...")
+
+    #     with Spinner("Waiting github response...") as spin:
+    #         try:
+    #             res = requests.get(API_URL).json()
+    #         except:
+    #             error("Exception ocurred when trying to connect to github. Maybe you don't have internet?")
+    #             return
             
-            info("Done")
-            return repo_content
+    #         spin.text = "Filtering data..."
+            
+    #         repo_content = []
+    #         for repo in res:
+    #             repo_content.append({
+    #                 "name": repo["name"],
+    #                 "alias": None,
+    #                 "path": None,
+    #                 "url": repo["html_url"],
+    #                 "description": repo["description"],
+    #                 "language": repo["language"],
+    #                 "last_update_date": repo["updated_at"]
+    #             })
+            
+    #         with self.repo_file.open("w") as f:
+    #             json.dump(repo_content, f)
+            
+    #         info("Done")
+    #         return repo_content
             
     def clear_cache(self):
         with Spinner(f"Removing {str(CACHE_DIR)}..."):
@@ -98,7 +132,7 @@ class Repository:
             
         github_pkg["name"] = pkg.lower()
         github_pkg["alias"] = pkg_name
-        
+
         if self.get_installed_package(pkg) is not None:
             error(f'Package "{pkg}" is already installed')
         
