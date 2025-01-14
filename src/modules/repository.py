@@ -61,38 +61,40 @@ class Repository:
             shutil.rmtree(CACHE_DIR)
             CACHE_DIR.mkdir(exist_ok=True)
         info("Removed", str(CACHE_DIR))
+    
+    def clone(self, pkg: Package, dir_name=None):
+        dest = CACHE_DIR / dir_name or pkg["name"]
+        if dest.exists() is False:
+            info("Cloning repository...")
+            exec_cmd(["git", "clone", pkg["url"], str(dest)])
+
+            if (dest / ".git").exists() is False:
+                error(f"The repository exists, but it's not a git repo\nRemove this folder and execute the {__name__} command again:\nRepo path: {dest}")
         
-    def install(self, pkg: Package | str, pkg_name=None, clone=False):        
+        return dest
+        
+    def install(self, pkg: str, pkg_name=None, clone=False):        
         github_pkg = self.get_package(pkg)
+        github_pkg["name"] = pkg.lower()
         github_pkg["alias"] = pkg_name
-        
-        package_name = pkg_name or pkg.lower()
-        github_pkg["name"] = package_name
             
         if github_pkg is None:
             error(f'No package named "{pkg}"')
             
-        if shutil.which(package_name) is not None and clone is False:
+        if shutil.which(github_pkg["name"]) is not None and clone is False:
             error("There's a executable in PATH with the same name of the package. Uninstall it, or specify the package name in the arguments")
-            
-        dest = CACHE_DIR / package_name
-        if dest.exists() is False:
-            info("Cloning repository...")
-            exec_cmd(["git", "clone", github_pkg["url"], str(dest)])
-            
+
+        dest = self.clone(github_pkg, dir_name=github_pkg["name"])
         if clone is True:
             return
-        else:
-            if (dest / ".git").exists() is False:
-                error(f"The repository exists, but it's not a git repo\nRemove this folder and execute the xpkg command again:\nRepo path: {dest}")
 
-        github_pkg["path"] = str(dest)
+        github_pkg["path"] = dest
 
         proj = Project.from_info(github_pkg)
         proj.setup()
         proj.install()
 
-        info(f'Installed package "{pkg}" with name "{package_name}"')
+        info(f'Installed package "{pkg}" with name "{github_pkg["name"]}"')
         
     def get_package(self, name) -> Package | None:
         pkg = list(filter(lambda pkg: name == pkg["name"], self.repo))
