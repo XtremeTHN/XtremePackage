@@ -61,8 +61,8 @@ class Repository:
             shutil.rmtree(CACHE_DIR)
             CACHE_DIR.mkdir(exist_ok=True)
         info("Removed", str(CACHE_DIR))
-        
-    def install(self, pkg: Package | str, pkg_name=None, clone=False):        
+
+    def install(self, pkg: str, pkg_name=None, clone=False):        
         github_pkg = self.get_package(pkg)
         if pkg_name is not None:
             if github_pkg["language"] != "python":
