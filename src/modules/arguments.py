@@ -5,6 +5,8 @@ from modules.style import underlined, bold, info, error
 
 class InstallArguments:
     clone_flag: bool
+    force_flag: bool
+
     alias_option: str | None
 
     bin_dir: str
@@ -14,6 +16,7 @@ class InstallArguments:
 
     def __init__(self) -> None:
         self.clone_flag = False
+        self.force_flag = False
         self.alias_option = None
         self.packages = []
 
@@ -43,6 +46,7 @@ def print_install_help():
     print("\t-h, --help         Prints this help message.")
     print("\t-r, --refresh      Refresh the repository.")
     print("\t-c, --clone        Only clone the repository.")
+    print("\t-f, --force        Force the installation.")
     print("\t--bin-directory    Sets the bin directory. Default: ~/.local/bin")
     print("\t--share-directory  Sets the share directory. Default: ~/.local/share")
 
@@ -119,6 +123,9 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                         
                         case "-c" | "--clone":
                             install_args.clone_flag = True
+                        
+                        case "-f" | "--force":
+                            install_args.force_flag = True
                         
                         case "-r" | "--refresh":
                             res.refresh_flag = True
