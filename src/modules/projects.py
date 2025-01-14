@@ -10,8 +10,26 @@ class BuildSystem:
     DEFAULT=1
     MESON=2
 
-class ValaProject:
+class Project:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def from_info(info):
+        if info["language"] == "python":
+            return PythonProject(info["path"], info["name"])
+        elif info["language"] == "vala":
+            return ValaProject(info["path"], info["name"])
+
+    def setup(self):
+        pass
+
+    def install(self):
+        pass
+
+class ValaProject(Project):
     def __init__(self, path, pkg_name):
+        super().__init__()
         self.package_name = pkg_name
         self.path = path
 
@@ -28,8 +46,9 @@ class ValaProject:
         info("Installing package with meson...")
         exec_cmd([self.meson_executable, "install", "-C", "build"], wd=self.path)
 
-class PythonProject:
+class PythonProject(Project):
     def __init__(self, path, pkg_name):
+        super().__init__()
         self.package_name = pkg_name
         self.path = path
 

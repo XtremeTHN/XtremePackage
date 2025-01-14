@@ -7,8 +7,7 @@ from modules.spinner import Spinner
 from modules.utils import exec_cmd
 from modules.constants import CACHE_DIR, CONFIG_DIR, API_URL
 
-from modules.projects import PythonProject, ValaProject
-
+from modules.projects import Project
 from typing import TypedDict
 
 class Package(TypedDict):
@@ -70,7 +69,7 @@ class Repository:
                 error("Alias option is only available when installing python packages")
         
         package_name = pkg_name or pkg.lower()
-        print(package_name)
+        github_pkg["name"] = package_name
             
         if github_pkg is None:
             error(f'No package named "{pkg}"')
@@ -88,20 +87,13 @@ class Repository:
         else:
             if (dest / ".git").exists() is False:
                 error(f"The repository exists, but it's not a git repo\nRemove this folder and execute the xpkg command again:\nRepo path: {dest}")
-        
-        match github_pkg["language"].lower():
-            case "python":
-                python = PythonProject(dest, package_name)
-                python.setup()
-                python.install()
-    
-            case 'vala':
-                vala = ValaProject(dest, package_name)
-                vala.setup()
-                vala.install()
-                build_dir = dest / "build"
 
-                
+        github_pkg["path"] = str(dest)
+
+        proj = Project.from_info(github_pkg)
+        proj.setup()
+        proj.install()
+
         info(f'Installed package "{pkg}" with name "{package_name}"')
         
     def get_package(self, name) -> Package | None:
