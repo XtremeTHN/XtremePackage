@@ -50,13 +50,17 @@ class ValaProject(Project):
         exec_cmd([self.meson_executable, "install", "-C", "build"], wd=self.path)
 
 class PythonProject(Project):
-    def __init__(self, path, pkg_name):
+    def __init__(self, path, pkg_name, alias=None):
         super().__init__()
         self.package_name = pkg_name
+        self.alias = alias
         self.path = path
 
         self.build_system = self.detect_build_system()
         self.meson_executable = "meson" if is_installed("arch-meson") is False else "arch-meson"
+
+        if self.build_system == BuildSystem.MESON and self.alias is not None:
+            error("Alias option is not available when installing meson projects")
 
     def get_main_file_python(self, path: Path) -> str:
         files = [str(p) for p in path.glob("**/*.py") if p.name == "main.py"]
