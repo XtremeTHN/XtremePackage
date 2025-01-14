@@ -16,14 +16,15 @@ class Project:
 
     @staticmethod
     def from_info(info):
-        if info["language"] != "python" and info["alias"] is not None:
+        language = info["language"].lower()
+        if language != "python" and info["alias"] is not None:
             error("Alias option is only available when installing python packages")
-
-        if info["language"] == "python":
+        
+        if language == "python":
             return PythonProject(info["path"], info["name"])
-        elif info["language"] == "vala":
+        elif language == "vala":
             return ValaProject(info["path"], info["name"])
-
+        
     def setup(self):
         pass
 
@@ -55,6 +56,7 @@ class PythonProject(Project):
         self.package_name = pkg_name
         self.alias = alias
         self.path = path
+        print(self.path)
 
         self.build_system = self.detect_build_system()
         self.meson_executable = "meson" if is_installed("arch-meson") is False else "arch-meson"
@@ -98,11 +100,11 @@ class PythonProject(Project):
     
     def __install_meson(self):
         info("Installing package with meson...")
-        exec_cmd([self.meson_executable, "install", "-C", "build"], wd=self.path)
+        exec_cmd(["meson", "install", "-C", "build"], wd=self.path)
     
     def __compile_meson(self):
         info("Configuring meson build...")
-        exec_cmd([self.meson_executable, "setup", "build"], wd=self.path)
+        exec_cmd([self.meson_executable, "build"], wd=self.path)
     
     def __compile_default(self):
         venv_dir = self.path / ".venv"
