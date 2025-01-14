@@ -130,6 +130,7 @@ class PythonProject(Project):
         os.remove(LOCAL_BIN_DIR / self.package_name)
     
     def __compile_nuitka(self):
+        # TODO: Stop using nuitka in a venv
         venv_dir = self.path / ".venv"
         requirements_path = self.path / "requirements.txt"
         
