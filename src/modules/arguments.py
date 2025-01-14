@@ -23,15 +23,25 @@ class InstallArguments:
         self.bin_dir = str(LOCAL_BIN_DIR)
         self.share_dir = str(SHARE_DIR)
 
+class UninstallArguments:
+    packages: list[str]
+
+    def __init__(self) -> None:
+        self.packages = []
+
 class Arguments:
     refresh_flag: bool
     clean_flag: bool
     debug_flag: bool
     
-    install: InstallArguments | None
+    install: InstallArguments
+    uninstall: UninstallArguments
+    list_: bool
     
     def __init__(self) -> None:
-        self.install = None
+        self.install = InstallArguments()
+        self.uninstall = UninstallArguments()
+        self.list_ = False
         self.refresh_flag = False
         self.clean_flag = False
         self.debug_flag = False
@@ -41,7 +51,8 @@ def print_usage():
 
 def print_install_help():
     print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [FLAGS] install [-a ALIAS] [--bin-directory PATH] [--share-directory PATH] [-c] PACKAGES")
-    
+
+    print("\nInstalls a package from the repository.\n")
     print(bold(underlined("Flags:")))
     print("\t-h, --help         Prints this help message.")
     print("\t-r, --refresh      Refresh the repository.")
@@ -50,8 +61,27 @@ def print_install_help():
     print("\t--bin-directory    Sets the bin directory. Default: ~/.local/bin")
     print("\t--share-directory  Sets the share directory. Default: ~/.local/share")
 
-    print("Positional arguments:")
+    print(bold(underlined("Positional arguments:")))
     print("\tPACKAGES          The packages to install.")
+
+def print_uninstall_help():
+    print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [FLAGS] uninstall PACKAGES")
+
+    print("\nUninstalls a package from the repository.\n")
+    
+    print(bold(underlined("Flags:")))
+    print("\t-h, --help         Prints this help message.")
+
+    print(bold(underlined("Positional arguments:")))
+    print("\tPACKAGES          The packages to uninstall.")
+
+def print_list_help():
+    print(f"{underlined(bold('Usage:'))} {sys.argv[0]} [FLAGS] list")
+
+    print("\nLists all installed packages.\n")
+    
+    print(bold(underlined("Flags:")))
+    print("\t-h, --help         Prints this help message.")
 
 def print_help():
     print_usage()
@@ -59,6 +89,8 @@ def print_help():
     
     print(bold(underlined("Commands:")))
     print("\tinstall:           Installs a package\n")
+    print("\tuninstall:         Uninstalls a package\n")
+    print("\tlist:              Lists all installed packages\n")
     
     print(bold(underlined("Flags:")))
     print("\t-h, --help         Prints this help message.")
@@ -87,6 +119,7 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
         match arg:
             case "-h" | "--help":
                 print_help()
+                sys.exit(0)
             
             case "-r" | "--refresh":
                 res.refresh_flag = True
@@ -96,10 +129,36 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
             
             case "-d" | "--debug":
                 res.debug_flag = True
+            
+            case "list":
+                res.list_ = True
+                iargs: list[str] = args[index + 1:]
+
+                for _index, _arg in enumerate(iargs):
+                    match _arg:
+                        case "-h" | "--help":
+                            print_uninstall_help()
+                            sys.exit(0)
+                        case _:
+                            error("Unexpected argument")
+                break
+            
+            case "uninstall":
+                iargs: list[str] = args[index + 1:]
+
+                for _index, _arg in enumerate(iargs):
+                    match _arg:
+                        case "-h" | "--help":
+                            print_uninstall_help()
+                            sys.exit(0)
+                        case _:
+                            res.uninstall.packages.append(_arg)
+                if len(res.uninstall.packages) == 0:
+                    error("Expected at least one package")
                 
-            case "install":
-                install_args = InstallArguments()
+                break
                 
+            case "install":                
                 double_continue = False
                 iargs: list[str] = args[index + 1:]
                 for _index, arg in enumerate(iargs):
@@ -114,18 +173,19 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                             if value.startswith("-"):
                                 error("Expected alias, not a flag")
 
-                            install_args.alias_option = value
+                            res.install.alias_option = value
                             double_continue = True
                             continue
                             
                         case "-h" | "--help":
                             print_install_help()
+                            sys.exit(0)
                         
                         case "-c" | "--clone":
-                            install_args.clone_flag = True
+                            res.install.clone_flag = True
                         
                         case "-f" | "--force":
-                            install_args.force_flag = True
+                            res.install.force_flag = True
                         
                         case "-r" | "--refresh":
                             res.refresh_flag = True
@@ -134,16 +194,15 @@ def ParseArgs(args=sys.argv[1:]) -> Arguments:
                             res.debug_flag = True
                         
                         case "--bin-directory":
-                            install_args.bin_dir = get_value(_index, iargs, err_msg="Expected bin directory")
+                            res.install.bin_dir = get_value(_index, iargs, err_msg="Expected bin directory")
                         
                         case "--share-directory":
-                            install_args.share_dir = get_value(_index, iargs, err_msg="Expected share directory")
+                            res.install.share_dir = get_value(_index, iargs, err_msg="Expected share directory")
                         
                         case _:
-                            install_args.packages.append(arg)
-                if len(install_args.packages) == 0:
+                            res.install.packages.append(arg)
+                if len(res.install.packages) == 0:
                     error("Expected at least one package")
-                res.install = install_args
                 break
 
             case _:

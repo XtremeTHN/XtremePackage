@@ -38,4 +38,9 @@ def exec_cmd(args: list, wd=None, env=None, exit_on_error=True):
                 error(args[0],  "returned", exit_code)
             else:
                 return exit_code
-    
+
+def decide() -> bool:
+    if input().lower() in ["n", "no"]:
+        return False
+    else:
+        return True

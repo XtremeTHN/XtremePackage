@@ -1,6 +1,6 @@
 import modules.style
 
-from modules.style import error
+from modules.style import error, pretty_string, colored_string, bold
 
 from modules.utils import is_installed
 from modules.repository import Repository
@@ -44,4 +44,13 @@ if __name__ == "__main__":
             error("Git not installed")
         
         for pkg in args.install.packages:
-            repo.install(pkg, args.install.alias_option, args.install.clone_flag)
+            repo.install(pkg, args.install.alias_option, args.install.clone_flag, args.install.force_flag)
+
+    if args.uninstall is not None:
+        for pkg in args.uninstall.packages:
+            repo.uninstall(pkg)
+    
+    if args.list_ is True:
+        repo.display_installed_pkgs()
+
+    repo.save_installed_pkgs()

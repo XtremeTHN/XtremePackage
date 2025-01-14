@@ -1,4 +1,4 @@
-from modules.utils import exec_cmd, is_installed
+from modules.utils import exec_cmd, is_installed, decide
 from modules.style import info, warn, error
 from modules.constants import LOCAL_BIN_DIR
 from pathlib import Path
@@ -7,12 +7,18 @@ import shutil
 import os
 
 class BuildSystem:
-    DEFAULT=1
+    NUITKA=1
     MESON=2
 
 class Project:
-    def __init__(self):
-        pass
+    build_system: BuildSystem
+    path: Path
+    def __init__(self, meson_required=False):
+        if meson_required is True:
+            if is_installed('meson') is False:
+                error("Meson needs to be installed to compile vala projects", exit_code=127)
+
+        self.meson_executable = "meson" if is_installed("arch-meson") is False else "arch-meson"
 
     @staticmethod
     def from_info(info):
@@ -21,34 +27,47 @@ class Project:
             error("Alias option is only available when installing python packages")
         
         if language == "python":
-            return PythonProject(info["path"], info["name"])
+            return PythonProject(info["path"], info["name"], info["alias"])
         elif language == "vala":
             return ValaProject(info["path"], info["name"])
         
+    def __compile_meson(self):
+        info("Configuring meson build...")
+        exec_cmd([self.meson_executable, "build"], wd=self.path)
+
     def setup(self):
-        pass
+        if self.build_system == BuildSystem.MESON:
+            self.__compile_meson()
+
+    def __install_meson(self):
+        info("Installing package with meson...")
+        exec_cmd(["meson", "install", "-C", "build"], wd=self.path)
 
     def install(self):
-        pass
+        if self.build_system == BuildSystem.MESON:
+            self.__install_meson()
+    
+    def __uninstall_meson(self):
+        if self.path.exists() is False:
+            error("Project git directory doesn't exist. Install again the package to remove it")
+            
+        info("Uninstalling package with meson...")
+        warn("This needs to be run as root. Continue? (y/n): ", end="")
+        if decide() is False:
+            return
+
+        exec_cmd(["sudo", "ninja", "uninstall", "-C", "build"], wd=self.path)
+
+    def uninstall(self):
+        if self.build_system == BuildSystem.MESON:
+            self.__uninstall_meson()
 
 class ValaProject(Project):
     def __init__(self, path, pkg_name):
         super().__init__()
         self.package_name = pkg_name
+        self.build_system = BuildSystem.MESON
         self.path = path
-
-        if is_installed('meson') is False:
-            error("Meson needs to be installed to compile vala projects", exit_code=127)
-
-        self.meson_executable = "meson" if is_installed("arch-meson") is False else "arch-meson"
-    
-    def setup(self):
-        info("Configuring vala project...")
-        exec_cmd([self.meson_executable, "setup", "build"], wd=self.path)
-
-    def install(self):
-        info("Installing package with meson...")
-        exec_cmd([self.meson_executable, "install", "-C", "build"], wd=self.path)
 
 class PythonProject(Project):
     def __init__(self, path, pkg_name, alias=None):
@@ -56,13 +75,14 @@ class PythonProject(Project):
         self.package_name = pkg_name
         self.alias = alias
         self.path = path
-        print(self.path)
 
         self.build_system = self.detect_build_system()
-        self.meson_executable = "meson" if is_installed("arch-meson") is False else "arch-meson"
 
         if self.build_system == BuildSystem.MESON and self.alias is not None:
             error("Alias option is not available when installing meson projects")
+        
+        if self.alias is not None:
+            info("Using alias: " + (self.alias))
 
     def get_main_file_python(self, path: Path) -> str:
         files = [str(p) for p in path.glob("**/*.py") if p.name == "main.py"]
@@ -92,21 +112,24 @@ class PythonProject(Project):
             return BuildSystem.MESON
         else:
             info("Using nuitka...")
-            return BuildSystem.DEFAULT
+            return BuildSystem.NUITKA
     
-    def __install_default(self):
+    def __install_nuitka(self):
         info('Moving to ~/.local/bin ...')
-        shutil.move(self.path / self.package_name, LOCAL_BIN_DIR / self.package_name)
+        name = self.alias or self.package_name
+        dest = LOCAL_BIN_DIR / name
+        shutil.move(self.path / self.package_name, dest)
     
-    def __install_meson(self):
-        info("Installing package with meson...")
-        exec_cmd(["meson", "install", "-C", "build"], wd=self.path)
+    def __uninstall_nuitka(self):
+        info('Removing from ~/.local/bin ...')
+        if (LOCAL_BIN_DIR / self.package_name).exists() is False:
+            if (LOCAL_BIN_DIR / self.alias).exists() is False:
+                error("Package doesn't exist on ~/.local/bin")
+            else:
+                self.package_name = self.alias
+        os.remove(LOCAL_BIN_DIR / self.package_name)
     
-    def __compile_meson(self):
-        info("Configuring meson build...")
-        exec_cmd([self.meson_executable, "build"], wd=self.path)
-    
-    def __compile_default(self):
+    def __compile_nuitka(self):
         venv_dir = self.path / ".venv"
         requirements_path = self.path / "requirements.txt"
         
@@ -130,13 +153,19 @@ class PythonProject(Project):
         info("Successfully compiled")
 
     def setup(self):
-        if self.build_system == BuildSystem.DEFAULT:
-            self.__compile_default()
+        if self.build_system == BuildSystem.NUITKA:
+            self.__compile_nuitka()
         else:
-            self.__compile_meson()
+            super().setup()
     
     def install(self):
-        if self.build_system == BuildSystem.DEFAULT:
-            self.__install_default()
+        if self.build_system == BuildSystem.NUITKA:
+            self.__install_nuitka()
         else:
-            self.__install_meson()
+            super().install()
+
+    def uninstall(self):
+        if self.build_system == BuildSystem.NUITKA:
+            self.__uninstall_nuitka()
+        else:
+            super().uninstall()
