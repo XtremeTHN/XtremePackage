@@ -61,12 +61,10 @@ class Repository:
             shutil.rmtree(CACHE_DIR)
             CACHE_DIR.mkdir(exist_ok=True)
         info("Removed", str(CACHE_DIR))
-
-    def install(self, pkg: str, pkg_name=None, clone=False):        
+        
+    def install(self, pkg: Package | str, pkg_name=None, clone=False):        
         github_pkg = self.get_package(pkg)
-        if pkg_name is not None:
-            if github_pkg["language"] != "python":
-                error("Alias option is only available when installing python packages")
+        github_pkg["alias"] = pkg_name
         
         package_name = pkg_name or pkg.lower()
         github_pkg["name"] = package_name

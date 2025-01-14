@@ -16,6 +16,9 @@ class Project:
 
     @staticmethod
     def from_info(info):
+        if info["language"] != "python" and info["alias"] is not None:
+            error("Alias option is only available when installing python packages")
+
         if info["language"] == "python":
             return PythonProject(info["path"], info["name"])
         elif info["language"] == "vala":
