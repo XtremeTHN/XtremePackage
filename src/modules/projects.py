@@ -101,7 +101,7 @@ class PythonProject:
         self.exec_on_venv(["python3", "-m", "nuitka", "--follow-imports", entry_file, '--output-dir=build', f'--output-file={self.package_name}'], venv_dir, self.path)
         info("Successfully compiled")
 
-    def compile(self):
+    def setup(self):
         if self.build_system == BuildSystem.DEFAULT:
             self.__compile_default()
         else:

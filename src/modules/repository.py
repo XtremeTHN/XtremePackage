@@ -92,7 +92,7 @@ class Repository:
         match github_pkg["language"].lower():
             case "python":
                 python = PythonProject(dest, package_name)
-                python.compile()
+                python.setup()
                 python.install()
     
             case 'vala':
