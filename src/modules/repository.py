@@ -93,11 +93,11 @@ class Repository:
         
     def install(self, pkg: str, pkg_name=None, clone=False, force=False):        
         github_pkg = self.get_package(pkg)
-        github_pkg["name"] = pkg.lower()
-        github_pkg["alias"] = pkg_name
-            
         if github_pkg is None:
             error(f'No package named "{pkg}"')
+            
+        github_pkg["name"] = pkg.lower()
+        github_pkg["alias"] = pkg_name
         
         if self.get_installed_package(pkg) is not None:
             error(f'Package "{pkg}" is already installed')
